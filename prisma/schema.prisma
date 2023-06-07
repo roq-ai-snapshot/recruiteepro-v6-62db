@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model business_organization {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String        @db.VarChar(255)
+  user_id     String        @db.Uuid
+  user        user          @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  integration integration[]
+  job_opening job_opening[]
+  workflow    workflow[]
+}
+
+model integration {
+  id                       String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  business_organization_id String                @db.Uuid
+  integration_type         String                @db.VarChar(50)
+  configuration            String
+  business_organization    business_organization @relation(fields: [business_organization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model interview {
+  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  job_application_id String          @db.Uuid
+  interviewer_id     String          @db.Uuid
+  scheduled_date     DateTime        @db.Timestamp(6)
+  feedback           String?
+  user               user            @relation(fields: [interviewer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  job_application    job_application @relation(fields: [job_application_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model job_application {
+  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  job_opening_id     String      @db.Uuid
+  applicant_id       String      @db.Uuid
+  resume             String      @db.VarChar(255)
+  application_status String      @db.VarChar(50)
+  interview          interview[]
+  user               user        @relation(fields: [applicant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  job_opening        job_opening @relation(fields: [job_opening_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model job_opening {
+  id                       String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                    String                @db.VarChar(255)
+  description              String
+  business_organization_id String                @db.Uuid
+  job_application          job_application[]
+  business_organization    business_organization @relation(fields: [business_organization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  workflow                 workflow[]
+}
+
+model user {
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                 String                  @unique @db.VarChar(255)
+  firstName             String?                 @db.VarChar(255)
+  lastName              String?                 @db.VarChar(255)
+  roq_user_id           String                  @db.VarChar(255)
+  tenant_id             String                  @db.VarChar(255)
+  business_organization business_organization[]
+  interview             interview[]
+  job_application       job_application[]
+}
+
+model workflow {
+  id                       String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  business_organization_id String                @db.Uuid
+  job_opening_id           String                @db.Uuid
+  steps                    String
+  business_organization    business_organization @relation(fields: [business_organization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  job_opening              job_opening           @relation(fields: [job_opening_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
